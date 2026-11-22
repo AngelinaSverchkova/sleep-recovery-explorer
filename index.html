@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Explore eight weeks of simulated sleep patterns and daily dressing reports from 48 fictional patients after stroke."
+    />
+    <meta property="og:title" content="Sleep &amp; Stroke Recovery Explorer" />
+    <meta property="og:type" content="website" />
+    <meta property="og:description" content="Explore eight weeks of simulated sleep patterns and daily dressing reports from 48 fictional patients after stroke." />
+    <meta property="og:url" content="https://angelinasverchkova.github.io/sleep-recovery-explorer/" />
+    <meta property="og:image" content="https://angelinasverchkova.github.io/sleep-recovery-explorer/docs/dashboard-preview.png" />
+    <meta property="og:image:alt" content="Patient and group recovery charts above a timeline of one night’s sleep stages." />
+    <title>Sleep &amp; stroke recovery</title>
+    <link rel="stylesheet" href="assets/style.css" />
+    <script defer src="data/dashboard.js"></script>
+    <script defer src="assets/model.js"></script>
+    <script defer src="assets/charts.js"></script>
+    <script defer src="assets/app.js"></script>
+  </head>
+  <body>
+    <main>
+      <header class="mast">
+        <div>
+          <h1>Sleep &amp; stroke recovery</h1>
+          <p>
+            Follow sleep and the ability to get dressed without reminders or
+            physical help.
+          </p>
+        </div>
+        <div class="mast-actions">
+          <span class="synthetic">Simulated data</span
+          ><button id="methods-open" class="quiet">About the data</button>
+        </div>
+      </header>
+      <noscript>This interactive dashboard requires JavaScript.</noscript>
+      <p id="load-error" role="alert" hidden></p>
+      <section id="explorer" hidden>
+        <div class="toolbar">
+          <label
+            >Patient
+            <select id="patient"></select
+          ></label>
+          <fieldset>
+            <legend>Time span</legend>
+            <label class="sr" for="from">From week</label
+            ><select id="from"></select
+            ><span class="muted">to</span
+            ><label class="sr" for="to">Through week</label
+            ><select id="to"></select>
+          </fieldset>
+          <p id="cohort-meta"></p>
+        </div>
+        <div class="figures">
+          <section class="panel patient-panel" aria-labelledby="patient-title">
+            <div class="panel-head">
+              <div>
+                <h2 id="patient-title">Patient diary</h2>
+              </div>
+              <span id="patient-group" class="unit-tag"></span>
+            </div>
+            <p class="measure" id="patient-y">
+              <i class="key patient-key"></i>Mornings dressed without help (% of
+              reported mornings)
+            </p>
+            <div
+              class="plot"
+              id="patient-plot"
+              role="group"
+              aria-labelledby="patient-y patient-x"
+            ></div>
+            <p class="measure" id="sleep-y">
+              <i class="key bars-key"></i>Recorded awakenings per night (weekly
+              average)
+            </p>
+            <div
+              class="mini-plot"
+              id="sleep-plot"
+              role="group"
+              aria-labelledby="sleep-y patient-x"
+            ></div>
+            <p class="axis-title" id="patient-x">Week of follow-up</p>
+            <p class="sr" id="week-help">
+              Select a week by clicking the chart or using the left and right
+              arrow keys. Home and End select the first and last visible weeks.
+            </p>
+            <p class="readout" id="patient-readout" aria-live="polite"></p>
+          </section>
+          <section class="panel" aria-labelledby="cohort-title">
+            <div class="panel-head">
+              <div>
+                <h2 id="cohort-title">Compare sleep groups</h2>
+              </div>
+            </div>
+            <p class="measure" id="cohort-y">
+              Mornings dressed without help (group average, %)
+            </p>
+            <div
+              class="plot"
+              id="cohort-plot"
+              role="group"
+              aria-labelledby="cohort-y cohort-x"
+            ></div>
+            <p class="axis-title" id="cohort-x">Week of follow-up</p>
+            <p class="group-explainer" id="group-explainer"></p>
+            <div
+              id="groups"
+              class="group-legend"
+              aria-label="Highlight a sleep group and browse its patients"
+            ></div>
+            <button id="clear-group" type="button" class="clear-filter" hidden>
+              Show all patients
+            </button>
+            <p class="readout" id="cohort-readout" aria-live="polite"></p>
+          </section>
+        </div>
+        <section class="panel night-panel" aria-labelledby="night-title">
+          <div class="night-heading">
+            <div>
+              <h2 id="night-title">One night in detail</h2>
+            </div>
+            <label
+              >Night ending on
+              <select id="morning"></select
+            ></label>
+          </div>
+          <div class="night-content">
+            <div class="night-figure">
+              <p class="measure" id="night-y">Estimated sleep stage</p>
+              <div
+                id="night-plot"
+                role="group"
+                aria-labelledby="night-y night-x"
+              ></div>
+              <p class="axis-title" id="night-x">
+                Time of night (Oslo local time)
+              </p>
+            </div>
+            <div class="night-notes">
+              <strong id="night-number"></strong><span id="night-stats"></span
+              ><span id="night-help"></span
+              ><a id="raw-file" href="data/apple_health/P001.zip" download
+                >Patient’s sleep XML (.zip)</a
+              >
+            </div>
+          </div>
+        </section>
+        <footer>
+          <span
+            >Generated cohort · The link between sleep and improvement was built
+            into the simulation.</span
+          >
+          <nav aria-label="Project links">
+            <a href="docs/methods.md" data-pages-href="docs/methods.html">Methods &amp; sources</a>
+            · <a href="https://github.com/AngelinaSverchkova/sleep-recovery-explorer">Source code</a>
+          </nav>
+        </footer>
+      </section>
+    </main>
+    <dialog id="methods" aria-labelledby="methods-title">
+      <div class="dialog-head">
+        <h2 id="methods-title">About the data</h2>
+        <button id="methods-close" class="quiet">Close</button>
+      </div>
+      <h3>What the study measured</h3>
+      <p>
+        Yang and colleagues followed 306 stroke survivors. They used ActiGraph
+        measurements across three phases of recovery and assessed disability
+        with the modified Rankin Scale at 12 months. A small group with long,
+        increasingly fragmented, less efficient sleep had higher odds of poor
+        outcome than the consistently good-sleep group.
+      </p>
+      <h3>What this simulation shows</h3>
+      <p>
+        48 fictional patients report whether they needed prompting or physical
+        help to get dressed over eight weeks. The generator gives the group with
+        fewer early interruptions a larger average improvement, with individual
+        variation. The sleep thresholds, time span and dressing outcome are
+        choices for this demonstration.
+      </p>
+      <h3>Reading the figures</h3>
+      <p>
+        The individual figure shows the percentage of completed morning reports
+        marked independent each week. Bars underneath count overnight
+        awakenings. Each cohort line averages the individual percentages with
+        equal weight per patient. Groups always use week 1 sleep, even when you
+        zoom in. Select a week in the individual chart to inspect a night.
+      </p>
+      <p>
+        The overnight view uses simulated Apple Health–style stage intervals.
+        Estimated awake, REM, core and deep stages are displayed in Oslo time.
+        Missing nights and missing diary entries are kept separate.
+      </p>
+      <p>
+        <a href="https://pubmed.ncbi.nlm.nih.gov/41652308/"
+          >Read the stroke study</a
+        >
+        ·
+        <a
+          href="https://developer.apple.com/documentation/healthkit/hkcategoryvaluesleepanalysis?language=objc"
+          >Apple’s sleep categories</a
+        >
+        · <a href="docs/methods.md" data-pages-href="docs/methods.html">Project methods</a>
+      </p>
+    </dialog>
+  </body>
+</html>
