@@ -44,9 +44,11 @@ Yang and colleagues followed 306 stroke survivors and found an association betwe
 
 Run commands from the project directory. Python 3.9+ with the IANA time zone database and Node.js 20+ are needed for development. The generator and analytical tests use their language's standard library.
 
+On Windows, if Python cannot find the `Europe/Oslo` time zone, run `py -m pip install tzdata` in the Python environment you use for this project. Use `py` in place of `python3` in the commands below.
+
 ```sh
 python3 -m pipeline.generate
-python3 -m unittest discover -s tests -p 'test_*.py' -v
+python3 -m unittest discover -s tests -p "test_*.py" -v
 node --test tests/model.test.cjs
 ```
 

@@ -99,17 +99,20 @@ class SleepDataTests(unittest.TestCase):
             self.assertEqual(classify([{"bouts": value}] * 4 + [None] * 3), expected)
         self.assertEqual(classify([{"bouts": 2}] * 3 + [None] * 4), "unclassified")
 
-    def test_reproducible_records_and_archive(self):
+    def test_reproducible_records_and_archived_xml(self):
         pid, nights, diary = simulate_patient(7)
         self.assertEqual((pid, nights, diary), simulate_patient(7))
         raw = xml_export(nights, pid)
+        member = "apple_health_export/export.xml"
+        published = ROOT / "data" / "apple_health" / f"{pid}.zip"
         with TemporaryDirectory() as tmp:
-            copy = Path(tmp) / "copy.zip"
-            write_zip(copy, raw)
-            self.assertEqual(
-                copy.read_bytes(),
-                (ROOT / "data" / "apple_health" / (pid + ".zip")).read_bytes(),
-            )
+            regenerated = Path(tmp) / "regenerated.zip"
+            write_zip(regenerated, raw)
+            # ZIP headers can vary across platforms even when the export is identical.
+            for path in (regenerated, published):
+                with self.subTest(archive=path.name), ZipFile(path) as archive:
+                    self.assertEqual(archive.namelist(), [member])
+                    self.assertEqual(archive.read(member), raw)
 
     def test_integer_allocation(self):
         for total in range(10, 120):
