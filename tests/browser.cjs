@@ -22,11 +22,81 @@ async function main() {
     await page.goto(
       pathToFileURL(path.resolve(__dirname, "../index.html")).href,
     );
-    await page.locator("#patient-plot svg").waitFor();
+    await page.locator("#cohort-plot svg").waitFor();
     await page.evaluate(() => document.fonts.ready);
+    const compare = page.getByRole("link", {
+      name: "Compare sleep groups",
+      exact: true,
+    });
+    const individual = page.getByRole("link", {
+      name: "Patients",
+      exact: true,
+    });
+    async function openView(view) {
+      await (view === "compare" ? compare : individual).click();
+      await page.locator("#" + view + "-view").waitFor();
+    }
+    const rows = page.locator("#patient-matrix tbody tr");
+    const weeks = page.locator("#patient-matrix thead th[data-week]");
+    const calendar = Array.from({ length: 8 }, (_, i) => "Week " + (i + 1));
     assert.equal(await page.locator("#patient option").count(), 48);
-    assert.equal(await page.locator("#morning option").count(), 56);
-    assert.equal(await page.locator("#cohort-plot g").count(), 3);
+    assert.equal(await page.locator("#cohort-plot g").count(), 4);
+    assert.equal(await rows.count(), 48);
+    assert.deepEqual(await weeks.allTextContents(), calendar);
+    assert.equal(await page.locator(".row-branches svg").count(), 1);
+    assert.equal(await page.locator(".col-branches svg").count(), 0);
+    await page.selectOption("#matrix-order", "both");
+    assert.equal(await page.locator(".col-branches svg").count(), 1);
+    assert.deepEqual((await weeks.allTextContents()).sort(), calendar);
+    await page.selectOption("#matrix-order", "id");
+    assert.deepEqual(await weeks.allTextContents(), calendar);
+    assert.equal(await rows.first().locator("th").innerText(), "P001");
+    const firstPatient = rows.first().getByRole("button").first();
+    await firstPatient.focus();
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowDown");
+    assert.deepEqual(
+      await page
+        .locator("#patient-matrix button:focus")
+        .evaluate((el) => [
+          el.parentElement.dataset.person,
+          el.parentElement.dataset.week,
+        ]),
+      ["P002", "0"],
+    );
+    await page.selectOption("#matrix-order", "time");
+    const marked = page.locator("#cohort-plot g").nth(2).locator("path").last();
+    await marked.scrollIntoViewIfNeeded();
+    const box = await marked.boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    assert.equal(await rows.count(), 16);
+    const p12 = page.locator(
+      '#patient-matrix td[data-person="P012"][data-week="7"]',
+    );
+    assert.equal(await p12.innerText(), "0%");
+    await p12.click({ position: { x: 1, y: 1 } });
+    await page.locator("#patients-view").waitFor();
+    assert.equal(await page.locator("#patient").inputValue(), "P012");
+    assert.match(
+      await page.locator("#patient-readout").innerText(),
+      /Week 8.*0 of 6/,
+    );
+    assert.equal(await page.locator("#mornings tr").count(), 7);
+    assert.equal(
+      await page
+        .locator("#mornings tr")
+        .filter({ hasText: "No report" })
+        .count(),
+      1,
+    );
+    await page.locator("#previous-week").click();
+    assert.match(await page.locator("#diary-title").innerText(), /Week 7/);
+    await page.locator("#next-week").click();
+    assert.ok(await page.locator("#next-week").isDisabled());
+    await openView("compare");
+    await page.locator("#clear-group").click();
+    await openView("patients");
+    await page.locator("#patient-plot svg").waitFor();
     // Labels are visible and programmatically linked to the exact chart they describe.
     for (const [id, y, x] of [
       [
@@ -44,19 +114,29 @@ async function main() {
         "Mornings dressed without help (group average, %)",
         "Week of follow-up",
       ],
-      [
-        "night-plot",
-        "Estimated sleep stage",
-        "Time of night (Oslo local time)",
-      ],
+      ["night-plot", "Estimated sleep stage", "Time of night (CET)"],
     ]) {
+      await openView(id === "cohort-plot" ? "compare" : "patients");
+      if (id === "night-plot") {
+        const recorded = page
+          .locator("#mornings tr")
+          .filter({ hasNotText: "No recording" })
+          .first();
+        await recorded.locator("button").click();
+      }
       const labels = (
         await page.locator("#" + id).getAttribute("aria-labelledby")
       ).split(" ");
       for (const [i, expected] of [y, x].entries()) {
-        assert.equal(await page.locator("#" + labels[i]).isVisible(), true);
         assert.equal(
-          (await page.locator("#" + labels[i]).innerText()).trim(),
+          await page.locator("#" + labels[i]).isVisible(),
+          true,
+          labels[i],
+        );
+        assert.equal(
+          (await page.locator("#" + labels[i]).innerText())
+            .replace(/\s+/g, " ")
+            .trim(),
           expected,
         );
       }
@@ -65,14 +145,6 @@ async function main() {
     assert.deepEqual(
       await page.locator("#sleep-plot .week-tick").allTextContents(),
       ["1", "2", "3", "4", "5", "6", "7", "8"],
-    );
-    assert.match(
-      await page.locator("#group-explainer").innerText(),
-      /three equal groups of 16 patients/,
-    );
-    assert.match(
-      await page.locator("#groups button").first().innerText(),
-      /2 or fewer awakenings per night/,
     );
     await page.locator("#patient-plot").focus();
     await page.keyboard.press("Home");
@@ -88,25 +160,14 @@ async function main() {
         fullPage: true,
       });
     };
+    await screenshot("desktop-patient");
+    await openView("compare");
     await screenshot("desktop");
-    for (const size of [
-      { width: 1440, height: 900 },
-      { width: 1280, height: 800 },
-    ]) {
-      await page.setViewportSize(size);
-      assert.ok(
-        (await page
-          .locator("#night-x")
-          .evaluate((n) => n.getBoundingClientRect().bottom)) <= size.height,
-        "All figures fit the desktop screen",
-      );
-    }
     await page.locator("#groups button").nth(2).click();
     assert.equal(await page.locator("#patient option").count(), 16);
-    assert.match(await page.locator("#patient-group").innerText(), /Frequent/);
-    assert.equal(await page.locator("#clear-group").isVisible(), true);
     await page.locator("#clear-group").click();
     assert.equal(await page.locator("#patient option").count(), 48);
+    await openView("patients");
     await page.selectOption("#patient", "P017");
     assert.match(
       await page.locator("#raw-file").getAttribute("href"),
@@ -114,7 +175,7 @@ async function main() {
     );
     await page.selectOption("#from", "3");
     await page.selectOption("#to", "3");
-    assert.equal(await page.locator("#morning option").count(), 7);
+    assert.equal(await page.locator("#mornings tr").count(), 7);
     assert.match(await page.locator("#patient-readout").innerText(), /Week 4/);
     await page.selectOption("#from", "6");
     assert.equal(await page.locator("#to").inputValue(), "6");
@@ -154,16 +215,42 @@ async function main() {
     );
     const missing = allDays.findIndex((d) => !d.night);
     assert.ok(missing >= 0);
-    await page.selectOption("#morning", String(missing));
+    async function openDay(i) {
+      await page
+        .locator("#patient-plot .interactive")
+        .nth(Math.floor(i / 7))
+        .click();
+      await page
+        .locator("#mornings button")
+        .nth(i % 7)
+        .click();
+    }
+    await openDay(missing);
     assert.match(
       await page.locator("#night-plot").innerText(),
       /No watch recording/,
     );
-    await page.selectOption(
-      "#morning",
-      String(allDays.findIndex((d) => d.night)),
-    );
+    await openDay(allDays.findIndex((d) => d.night));
     assert.equal(await page.locator("#night-plot svg").count(), 1);
+    const clockLabels = (
+      await page.locator("#night-plot svg text").allTextContents()
+    ).filter((label) => /^\d{2}:\d{2}$/.test(label));
+    assert.ok(clockLabels.length >= 2);
+    const minutes = clockLabels.map(
+      (label) => Number(label.slice(0, 2)) * 60 + Number(label.slice(3)),
+    );
+    const spacings = minutes
+      .slice(1)
+      .map((n, i) => (1440 + n - minutes[i]) % 1440);
+    assert.ok(spacings[0] > 0 && spacings.every((gap) => gap === spacings[0]));
+    assert.deepEqual(
+      await page.evaluate(() =>
+        ["2026-10-24T23:00:00Z", "2026-10-25T23:00:00Z"].map((iso) =>
+          RecoveryCharts.formatTime(Date.parse(iso) / 1000),
+        ),
+      ),
+      ["00:00", "00:00"],
+    );
     await page.locator("#methods-open").click();
     assert.equal(await page.locator("dialog").isVisible(), true);
     await page.keyboard.press("Escape");
@@ -175,6 +262,14 @@ async function main() {
       );
       assert.ok(await page.locator("#patient-plot svg").isVisible());
       await screenshot("mobile-" + width);
+      await openView("compare");
+      assert.ok(await page.locator("#cohort-hint").isVisible());
+      assert.ok(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      );
+      await openView("patients");
     }
     assert.deepEqual(issues, []);
     assert.deepEqual(external, []);
@@ -205,11 +300,23 @@ async function main() {
           configurable: true,
         });
       }, mode);
-      await variant.goto(page.url());
+      await variant.goto(page.url().split("#")[0]);
       if (mode === "invalid") {
         assert.equal(await variant.locator("#load-error").isVisible(), true);
         assert.equal(await variant.locator("#explorer").isVisible(), false);
       } else {
+        assert.equal(
+          await variant.locator("#patient-matrix tbody tr").count(),
+          1,
+        );
+        assert.match(
+          await variant.locator("#cohort-readout").innerText(),
+          /no reports/,
+        );
+        await variant
+          .getByRole("link", { name: "Patients", exact: true })
+          .click();
+        await variant.locator("#patients-view").waitFor();
         assert.match(
           await variant.locator("#patient-group").innerText(),
           /Insufficient/,
@@ -222,11 +329,7 @@ async function main() {
           await variant.locator("#groups button:disabled").count(),
           3,
         );
-        assert.match(
-          await variant.locator("#cohort-readout").innerText(),
-          /no reports/,
-        );
-        assert.equal(await variant.locator("#morning option").count(), 7);
+        assert.equal(await variant.locator("#mornings tr").count(), 7);
         assert.equal(
           await variant.locator("#sleep-plot rect.interactive").count(),
           0,

@@ -63,6 +63,23 @@ test("browser input contract accepts missing observations and unclassified patie
   night.bouts = 2;
   assert.equal(M.validDataset(data), false);
 });
+test("the overall line includes reporting patients without a baseline classification", () => {
+  const patients = [
+    { id: "P001", group: "fewer" },
+    { id: "P002", group: "unclassified" },
+  ];
+  const weeks = new Map([
+    ["P001", [{ rate: 0 }]],
+    ["P002", [{ rate: 100 }]],
+  ]);
+  const result = M.cohortWeeks(patients, weeks);
+  assert.deepEqual(result.find((group) => group.id === "fewer").weeks, [
+    { rate: 0, n: 1 },
+  ]);
+  assert.deepEqual(result.find((group) => group.id === "all").weeks, [
+    { rate: 50, n: 2 },
+  ]);
+});
 function fixture() {
   return {
     version: 1,

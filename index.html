@@ -9,143 +9,259 @@
     />
     <meta property="og:title" content="Sleep &amp; Stroke Recovery Explorer" />
     <meta property="og:type" content="website" />
-    <meta property="og:description" content="Explore eight weeks of simulated sleep patterns and daily dressing reports from 48 fictional patients after stroke." />
-    <meta property="og:url" content="https://angelinasverchkova.github.io/sleep-recovery-explorer/" />
-    <meta property="og:image" content="https://angelinasverchkova.github.io/sleep-recovery-explorer/docs/dashboard-preview.png" />
-    <meta property="og:image:alt" content="Patient and group recovery charts above a timeline of one night’s sleep stages." />
-    <title>Sleep &amp; stroke recovery</title>
+    <meta
+      property="og:description"
+      content="Explore eight weeks of simulated sleep patterns and daily dressing reports from 48 fictional patients after stroke."
+    />
+    <meta
+      property="og:url"
+      content="https://angelinasverchkova.github.io/sleep-recovery-explorer/"
+    />
+    <meta
+      property="og:image"
+      content="https://angelinasverchkova.github.io/sleep-recovery-explorer/docs/dashboard-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="Group trends and a blue patient-by-week heatmap."
+    />
+    <title>SLEEP &amp; STROKE RECOVERY</title>
     <link rel="stylesheet" href="assets/style.css" />
     <script defer src="data/dashboard.js"></script>
     <script defer src="assets/model.js"></script>
     <script defer src="assets/charts.js"></script>
+    <script defer src="assets/profiles.js"></script>
+    <script defer src="assets/matrix.js"></script>
     <script defer src="assets/app.js"></script>
   </head>
   <body>
     <main>
       <header class="mast">
         <div>
-          <h1>Sleep &amp; stroke recovery</h1>
-          <p>
-            Follow sleep and the ability to get dressed without reminders or
-            physical help.
-          </p>
+          <h1>SLEEP &amp; STROKE RECOVERY</h1>
         </div>
         <div class="mast-actions">
-          <span class="synthetic">Simulated data</span
-          ><button id="methods-open" class="quiet">About the data</button>
+          <span class="synthetic">Simulated data</span>
+          <details class="tip">
+            <summary aria-label="What does simulated data mean?">i</summary>
+            <p>
+              All 48 patients, watch recordings and diary entries were generated
+              for this demonstration.
+            </p>
+          </details>
+          <button id="methods-open" class="quiet">About the data</button>
         </div>
       </header>
       <noscript>This interactive dashboard requires JavaScript.</noscript>
       <p id="load-error" role="alert" hidden></p>
       <section id="explorer" hidden>
+        <nav class="views" aria-label="Dashboard views">
+          <a href="#compare">Compare sleep groups</a
+          ><a href="#patients">Patients</a>
+        </nav>
         <div class="toolbar">
-          <label
+          <label id="picker"
             >Patient
             <select id="patient"></select
           ></label>
-          <fieldset>
-            <legend>Time span</legend>
-            <label class="sr" for="from">From week</label
-            ><select id="from"></select
-            ><span class="muted">to</span
-            ><label class="sr" for="to">Through week</label
-            ><select id="to"></select>
-          </fieldset>
-          <p id="cohort-meta"></p>
+          <p id="cohort-meta" aria-live="polite"></p>
+          <button type="button" id="clear-group" class="clear-filter" hidden>
+            Clear group filter
+          </button>
         </div>
-        <div class="figures">
-          <section class="panel patient-panel" aria-labelledby="patient-title">
-            <div class="panel-head">
-              <div>
-                <h2 id="patient-title">Patient diary</h2>
-              </div>
-              <span id="patient-group" class="unit-tag"></span>
+        <section id="compare-view" aria-labelledby="cohort-title">
+          <div class="panel">
+            <div class="figure-heading">
+              <h2 id="cohort-title">Compare sleep groups</h2>
+              <details class="tip">
+                <summary aria-label="About sleep groups">?</summary>
+                <p>
+                  Groups use average awakenings per recorded night in week 1.
+                  Each patient with a diary that week counts equally. Select a
+                  group button when the lines overlap.
+                </p>
+              </details>
             </div>
-            <p class="measure" id="patient-y">
-              <i class="key patient-key"></i>Mornings dressed without help (% of
-              reported mornings)
-            </p>
-            <div
-              class="plot"
-              id="patient-plot"
-              role="group"
-              aria-labelledby="patient-y patient-x"
-            ></div>
-            <p class="measure" id="sleep-y">
-              <i class="key bars-key"></i>Recorded awakenings per night (weekly
-              average)
-            </p>
-            <div
-              class="mini-plot"
-              id="sleep-plot"
-              role="group"
-              aria-labelledby="sleep-y patient-x"
-            ></div>
-            <p class="axis-title" id="patient-x">Week of follow-up</p>
-            <p class="sr" id="week-help">
-              Select a week by clicking the chart or using the left and right
-              arrow keys. Home and End select the first and last visible weeks.
-            </p>
-            <p class="readout" id="patient-readout" aria-live="polite"></p>
-          </section>
-          <section class="panel" aria-labelledby="cohort-title">
-            <div class="panel-head">
+            <div class="comparison">
               <div>
-                <h2 id="cohort-title">Compare sleep groups</h2>
+                <div id="cohort-window">
+                  <fieldset id="period">
+                    <legend>Time span</legend>
+                    <label class="sr" for="from">From week</label
+                    ><select id="from"></select>
+                    <span>to</span>
+                    <label class="sr" for="to">Through week</label
+                    ><select id="to"></select>
+                  </fieldset>
+                </div>
+                <div class="axis-frame">
+                  <p class="y-axis" id="cohort-y">
+                    Mornings dressed without help
+                    <span>(group average, %)</span>
+                  </p>
+                  <div
+                    class="plot"
+                    id="cohort-plot"
+                    role="group"
+                    aria-labelledby="cohort-y cohort-x"
+                  ></div>
+                  <p class="axis-title" id="cohort-x">Week of follow-up</p>
+                </div>
+              </div>
+              <div>
+                <h3>Sleep groups</h3>
+                <div
+                  id="groups"
+                  class="group-legend"
+                  aria-label="Sleep groups"
+                ></div>
               </div>
             </div>
-            <p class="measure" id="cohort-y">
-              Mornings dressed without help (group average, %)
-            </p>
-            <div
-              class="plot"
-              id="cohort-plot"
-              role="group"
-              aria-labelledby="cohort-y cohort-x"
-            ></div>
-            <p class="axis-title" id="cohort-x">Week of follow-up</p>
-            <p class="group-explainer" id="group-explainer"></p>
-            <div
-              id="groups"
-              class="group-legend"
-              aria-label="Highlight a sleep group and browse its patients"
-            ></div>
-            <button id="clear-group" type="button" class="clear-filter" hidden>
-              Show all patients
-            </button>
             <p class="readout" id="cohort-readout" aria-live="polite"></p>
-          </section>
-        </div>
-        <section class="panel night-panel" aria-labelledby="night-title">
-          <div class="night-heading">
-            <div>
-              <h2 id="night-title">One night in detail</h2>
-            </div>
-            <label
-              >Night ending on
-              <select id="morning"></select
-            ></label>
+            <p class="hint" id="cohort-hint">
+              Select a point to see the patients behind it. Select a heatmap
+              cell to open that week’s diary.
+            </p>
           </div>
-          <div class="night-content">
-            <div class="night-figure">
-              <p class="measure" id="night-y">Estimated sleep stage</p>
-              <div
-                id="night-plot"
-                role="group"
-                aria-labelledby="night-y night-x"
-              ></div>
-              <p class="axis-title" id="night-x">
-                Time of night (Oslo local time)
-              </p>
-            </div>
-            <div class="night-notes">
-              <strong id="night-number"></strong><span id="night-stats"></span
-              ><span id="night-help"></span
-              ><a id="raw-file" href="data/apple_health/P001.zip" download
-                >Patient’s sleep XML (.zip)</a
+          <section class="panel matrix-panel" aria-labelledby="matrix-title">
+            <div class="figure-heading">
+              <h2 id="matrix-title">Patient heatmap</h2>
+              <details class="tip">
+                <summary aria-label="About the heatmap">?</summary>
+                <p>
+                  Branches connect similar records. Patient ID colours show the
+                  week 1 group. Grey means the watch and diary could not be
+                  paired. A dash means there were no dressing reports.
+                </p>
+              </details>
+              <label class="order"
+                >Axis order
+                <select id="matrix-order">
+                  <option value="time">
+                    Similar patients, weeks in time order
+                  </option>
+                  <option value="both">Cluster patients and weeks</option>
+                  <option value="id">Patient ID and calendar week</option>
+                </select></label
               >
             </div>
+            <dl class="matrix-key" id="matrix-key">
+              <dt>Cell value</dt>
+              <dd>
+                Mornings dressed without help (% of completed diary entries).
+              </dd>
+              <dt>Cell color</dt>
+              <dd>
+                <span class="ramp" aria-hidden="true"></span> Darker blue means
+                more awakenings, more mornings needing help, or both. Only
+                mornings with both watch and diary data count.
+              </dd>
+            </dl>
+            <div
+              class="matrix-scroll"
+              tabindex="0"
+              role="region"
+              aria-label="Patient heatmap, scroll to see more weeks"
+            >
+              <table
+                id="patient-matrix"
+                aria-labelledby="matrix-title"
+                aria-describedby="matrix-key"
+              ></table>
+            </div>
+          </section>
+        </section>
+        <section id="patients-view" aria-labelledby="patient-title" hidden>
+          <div class="figures">
+            <section class="panel patient-panel">
+              <div class="patient-head">
+                <h2 id="patient-title">Patient diary</h2>
+                <div id="patient-window"></div>
+              </div>
+              <p id="patient-group" class="unit-tag"></p>
+              <p class="measure" id="patient-y">
+                <i class="key patient-key"></i>Mornings dressed without help (%
+                of reported mornings)
+              </p>
+              <div
+                class="plot"
+                id="patient-plot"
+                role="group"
+                aria-labelledby="patient-y patient-x"
+              ></div>
+              <p class="measure" id="sleep-y">
+                <i class="key bars-key"></i>Recorded awakenings per night
+                (weekly average)
+              </p>
+              <div
+                class="mini-plot"
+                id="sleep-plot"
+                role="group"
+                aria-labelledby="sleep-y patient-x"
+              ></div>
+              <p class="axis-title" id="patient-x">Week of follow-up</p>
+              <p class="sr" id="week-help">
+                Select a week by clicking the chart or using the left and right
+                arrow keys. Home and End select the first and last visible
+                weeks.
+              </p>
+              <p class="readout" id="patient-readout" aria-live="polite"></p>
+            </section>
+            <section class="panel diary-panel" aria-labelledby="diary-title">
+              <div class="figure-heading">
+                <h2 id="diary-title">Morning diary</h2>
+                <div class="diary-nav">
+                  <button type="button" class="quiet" id="previous-week">
+                    Previous week
+                  </button>
+                  <button type="button" class="quiet" id="next-week">
+                    Next week
+                  </button>
+                </div>
+              </div>
+              <table class="diary">
+                <thead>
+                  <tr>
+                    <th scope="col">Morning</th>
+                    <th scope="col">Awakenings</th>
+                    <th scope="col">Getting dressed</th>
+                  </tr>
+                </thead>
+                <tbody id="mornings"></tbody>
+              </table>
+            </section>
           </div>
+          <section class="panel night-panel" aria-labelledby="night-title">
+            <div class="figure-heading">
+              <h2 id="night-title" tabindex="-1">Overnight recording</h2>
+              <details class="tip">
+                <summary aria-label="About recording times">?</summary>
+                <p>
+                  Recordings use CET (UTC+1) throughout. Watch exports preserve
+                  Oslo’s original summer or winter offset.
+                </p>
+              </details>
+            </div>
+            <div class="night-content">
+              <div class="axis-frame">
+                <p class="y-axis" id="night-y">Estimated sleep stage</p>
+                <div
+                  id="night-plot"
+                  role="group"
+                  aria-labelledby="night-y night-x"
+                ></div>
+                <p class="axis-title" id="night-x">Time of night (CET)</p>
+              </div>
+              <div class="night-notes">
+                <strong id="night-number"></strong
+                ><span id="recording-time"></span><span id="night-stats"></span
+                ><span id="night-help"></span>
+                <a id="raw-file" href="data/apple_health/P001.zip" download
+                  >Patient’s sleep XML (.zip)</a
+                >
+              </div>
+            </div>
+          </section>
         </section>
         <footer>
           <span
@@ -153,8 +269,14 @@
             into the simulation.</span
           >
           <nav aria-label="Project links">
-            <a href="docs/methods.md" data-pages-href="docs/methods.html">Methods &amp; sources</a>
-            · <a href="https://github.com/AngelinaSverchkova/sleep-recovery-explorer">Source code</a>
+            <a href="docs/methods.md" data-pages-href="docs/methods.html"
+              >Methods &amp; sources</a
+            >
+            ·
+            <a
+              href="https://github.com/AngelinaSverchkova/sleep-recovery-explorer"
+              >Source code</a
+            >
           </nav>
         </footer>
       </section>
@@ -190,8 +312,9 @@
       </p>
       <p>
         The overnight view uses simulated Apple Health–style stage intervals.
-        Estimated awake, REM, core and deep stages are displayed in Oslo time.
-        Missing nights and missing diary entries are kept separate.
+        Estimated awake, REM, core and deep stages use fixed CET (UTC+1). Oslo
+        watch exports are one hour ahead during summer time. Missing nights and
+        missing diary entries are kept separate.
       </p>
       <p>
         <a href="https://pubmed.ncbi.nlm.nih.gov/41652308/"
@@ -202,7 +325,10 @@
           href="https://developer.apple.com/documentation/healthkit/hkcategoryvaluesleepanalysis?language=objc"
           >Apple’s sleep categories</a
         >
-        · <a href="docs/methods.md" data-pages-href="docs/methods.html">Project methods</a>
+        ·
+        <a href="docs/methods.md" data-pages-href="docs/methods.html"
+          >Project methods</a
+        >
       </p>
     </dialog>
   </body>

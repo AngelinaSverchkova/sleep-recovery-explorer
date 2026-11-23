@@ -44,6 +44,17 @@
           fill: color,
         }),
       );
+    else if (shape === "all")
+      svg.append(
+        svgNode("circle", {
+          cx: x,
+          cy: y,
+          r: 3.2,
+          fill: "#101b28",
+          stroke: color,
+          "stroke-width": 1.5,
+        }),
+      );
     else svg.append(svgNode("circle", { cx: x, cy: y, r: 3.1, fill: color }));
   }
   // Both patient plots must place a given week at exactly the same x position.
@@ -77,6 +88,7 @@
       selectedWeek,
       focusGroup,
       onWeek,
+      onSeries,
       label,
       showWeeks = true,
     },
@@ -161,7 +173,32 @@
               .join(" · "),
         ),
       );
-      hit.addEventListener("click", () => onWeek(wk));
+      hit.addEventListener("click", (event) => {
+        if (!onSeries) return onWeek(wk);
+        const local = new DOMPoint(
+          event.clientX,
+          event.clientY,
+        ).matrixTransform(svg.getScreenCTM().inverse());
+        const neighbor = local.x < x(i) ? i - 1 : i + 1;
+        const nearby = series
+          .filter((s) => s.values[wk] != null)
+          .map((s) => {
+            let expected = y(s.values[wk]);
+            const adjacent = s.values[weeks[neighbor]];
+            if (adjacent != null)
+              expected +=
+                ((y(adjacent) - expected) * (local.x - x(i))) /
+                (x(neighbor) - x(i));
+            return { id: s.id, gap: Math.abs(local.y - expected) };
+          })
+          .sort((a, b) => a.gap - b.gap);
+        if (!nearby.length || nearby[0].gap > 13) return onWeek(wk);
+        const tied = nearby.filter((item) => item.gap < nearby[0].gap + 1);
+        onSeries(
+          tied.map((item) => item.id),
+          wk,
+        );
+      });
       svg.append(hit);
     });
   }
@@ -238,7 +275,7 @@
     });
   }
   const clock = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Europe/Oslo",
+    timeZone: "Etc/GMT-1", // Fixed CET, including recordings made during Oslo summer time.
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23",
@@ -287,15 +324,20 @@
       text(svg, left - 6, y(s) + 3, names[s], "end");
       line(svg, left, y(s), right, y(s));
     });
-    const ticks = w < 420 ? 3 : 5;
-    for (let i = 0; i < ticks; i++) {
-      const m = (total * i) / (ticks - 1);
-      text(
-        svg,
-        x(m),
-        h - 3,
-        clock.format(new Date((obs.start + 60 * m) * 1000)),
-      );
+    const minutesPerLabel = (40 * total) / Math.max(1, right - left);
+    const tickSize =
+      [1, 5, 15, 30, 60, 120, 240, 480, 720].find(
+        (n) => n >= minutesPerLabel && (total < 240 || n >= 120),
+      ) || Math.ceil(minutesPerLabel / 1440) * 1440;
+    const cetMinute = obs.start / 60 + 60;
+    for (
+      let t = Math.ceil(cetMinute / tickSize) * tickSize;
+      t <= cetMinute + total;
+      t += tickSize
+    ) {
+      const m = t - cetMinute;
+      line(svg, x(m), top, x(m), bottom, grid, { "stroke-dasharray": "2 4" });
+      text(svg, x(m), h - 4, formatTime(obs.start + 60 * m));
     }
     let pos = 0,
       previous = null;
@@ -329,5 +371,8 @@
       previous = stage;
     });
   }
-  window.RecoveryCharts = { trends, bars, night };
+  function formatTime(seconds) {
+    return clock.format(new Date(seconds * 1000));
+  }
+  window.RecoveryCharts = { trends, bars, night, formatTime };
 })();

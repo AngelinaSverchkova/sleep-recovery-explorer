@@ -14,7 +14,12 @@
   const data = window.SLEEP_RECOVERY_DATA;
   const model = window.RecoveryModel;
   const charts = window.RecoveryCharts;
-  if (!model?.validDataset(data) || !charts) {
+  if (
+    !model?.validDataset(data) ||
+    !charts ||
+    !window.SleepProfiles ||
+    !window.RecoveryMatrix
+  ) {
     const warning = byId("load-error");
     warning.hidden = false;
     warning.textContent =
@@ -32,7 +37,7 @@
     first: 0,
     last: data.weeks - 1,
     day: Math.max(0, initialDay),
-    group: null,
+    selection: [],
   };
   const calendar = new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
@@ -49,7 +54,37 @@
     ...g,
     values: g.weeks.map((w) => w.rate),
   }));
-  let previousMorningOptions = "";
+  const paired = new Map(
+    patients.map((p) => [
+      p.id,
+      weekly
+        .get(p.id)
+        .map((_, week) =>
+          SleepProfiles.pairedSummary(p.days.slice(week * 7, week * 7 + 7)),
+        ),
+    ]),
+  );
+  let scale = 1;
+  for (const p of patients)
+    for (const day of p.days) {
+      if (day.help && day.night) scale = Math.max(scale, day.night.bouts);
+    }
+  const patientView = () => location.hash === "#patients";
+  const formatDay = (day) => calendar.format(new Date(day.date + "T12:00:00Z"));
+  const eligible = () =>
+    !state.selection.length || state.selection.includes("all")
+      ? patients
+      : patients.filter((p) => state.selection.includes(p.group));
+  let matrixKey = "";
+  const matrix = RecoveryMatrix.attach(
+    byId("patient-matrix"),
+    document.querySelector(".ramp"),
+    (id, week) => {
+      state.person = id;
+      state.day = week * 7;
+      location.hash = "patients";
+    },
+  );
   function option(value, label) {
     const element = document.createElement("option");
     element.value = value;
@@ -57,22 +92,21 @@
     return element;
   }
   function updatePatients() {
-    const eligible = patients.filter(
-      (p) => !state.group || p.group === state.group,
-    );
-    if (!eligible.some((p) => p.id === state.person))
-      state.person = eligible[0].id;
-    byId("patient").replaceChildren(...eligible.map((p) => option(p.id, p.id)));
+    const members = eligible();
+    if (!members.some((p) => p.id === state.person))
+      state.person = members[0].id;
+    byId("patient").replaceChildren(...members.map((p) => option(p.id, p.id)));
     byId("patient").value = state.person;
   }
-  function selectGroup(id) {
-    state.group = id;
+  function selectGroups(ids, week) {
+    state.selection = ids.includes("all") ? ["all"] : ids;
+    if (week !== undefined) state.day = week * 7;
     updatePatients();
-    render();
+    render(true);
   }
   function chooseWeek(week) {
     state.day = week * 7 + (state.day % 7);
-    render();
+    render(true);
   }
   function setupControls() {
     for (const g of groups) {
@@ -94,31 +128,65 @@
       key.style.setProperty("--color", g.color);
       key.setAttribute("aria-hidden", "true");
       const title = document.createElement("strong");
-      title.textContent = g.name.split(" ")[0];
+      title.textContent =
+        (g.id === "all" ? "All patients" : g.name.split(" ")[0]) +
+        " · " +
+        g.members +
+        (g.id === "all" ? "" : " patients");
       const range = document.createElement("span");
       range.className = "group-range";
       range.textContent = g.range;
       button.append(key, title, range);
       button.addEventListener("click", () =>
-        selectGroup(state.group === g.id ? null : g.id),
+        selectGroups(
+          state.selection.length === 1 && state.selection[0] === g.id
+            ? []
+            : [g.id],
+        ),
       );
       byId("groups").append(button);
     }
-    const balanced =
-      groups.every((g) => g.members === groups[0].members) &&
-      groups.reduce((n, g) => n + g.members, 0) === patients.length;
-    byId("group-explainer").textContent = balanced
-      ? "Select a group by average awakenings per recorded night in week 1. We created three equal groups of " +
-        groups[0].members +
-        " patients for comparison."
-      : groups.map((g) => g.name + ": " + g.members + " patients").join(" · ") +
-        ". Groups use average awakenings per recorded night in week 1.";
     byId("clear-group").addEventListener("click", () => {
-      const old = state.group;
-      selectGroup(null);
-      byId("groups")
-        .querySelector('[data-group="' + old + '"]')
-        ?.focus();
+      const prior = state.selection[0];
+      selectGroups([]);
+      if (patientView()) byId("patient").focus();
+      else
+        byId("groups")
+          .querySelector('[data-group="' + prior + '"]')
+          ?.focus();
+    });
+    byId("matrix-order").addEventListener("change", () => render());
+    byId("previous-week").addEventListener("click", () =>
+      chooseWeek(Math.floor(state.day / 7) - 1),
+    );
+    byId("next-week").addEventListener("click", () =>
+      chooseWeek(Math.floor(state.day / 7) + 1),
+    );
+    byId("mornings").addEventListener("click", (e) => {
+      const row = e.target.closest("tr[data-day]");
+      if (!row) return;
+      state.day = Number(row.dataset.day);
+      render();
+      byId("night-title").focus();
+    });
+    window.addEventListener("hashchange", () => {
+      render();
+      const heading = byId(patientView() ? "patient-title" : "cohort-title");
+      heading.tabIndex = -1;
+      heading.focus({ preventScroll: true });
+      window.scrollTo(0, 0);
+    });
+    document.addEventListener("click", (e) => {
+      document.querySelectorAll("details.tip[open]").forEach((tip) => {
+        if (!tip.contains(e.target)) tip.open = false;
+      });
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      document.querySelectorAll("details.tip[open]").forEach((tip) => {
+        tip.open = false;
+        tip.querySelector("summary").focus();
+      });
     });
     for (const id of ["from", "to"]) {
       byId(id).replaceChildren(
@@ -143,14 +211,13 @@
       state.person = byId("patient").value;
       render();
     });
-    byId("morning").addEventListener("change", () => {
-      state.day = Number(byId("morning").value);
-      render();
-    });
     for (const host of [byId("patient-plot"), byId("cohort-plot")]) {
       host.tabIndex = 0;
       host.setAttribute("aria-keyshortcuts", "ArrowLeft ArrowRight Home End");
-      host.setAttribute("aria-describedby", "week-help");
+      host.setAttribute(
+        "aria-describedby",
+        host.id === "cohort-plot" ? "cohort-hint" : "week-help",
+      );
       host.addEventListener("keydown", (e) => {
         const week = Math.floor(state.day / 7);
         const next = {
@@ -166,36 +233,49 @@
       });
     }
   }
-  function renderControls(p) {
+  function renderControls() {
+    byId("patient").value = state.person;
     byId("from").value = state.first;
     byId("to").value = state.last;
-    const key = [p.id, state.first, state.last].join("/");
-    if (key !== previousMorningOptions) {
-      previousMorningOptions = key;
-      const start = state.first * 7;
-      const options = p.days.slice(start, (state.last + 1) * 7).map((d, i) => {
-        const date = calendar.format(new Date(d.date + "T12:00:00Z"));
-        return option(
-          start + i,
-          date + " · Week " + (Math.floor((start + i) / 7) + 1),
-        );
-      });
-      byId("morning").replaceChildren(...options);
-    }
-    byId("morning").value = state.day;
-    const count = state.last - state.first + 1;
+    const members = eligible();
     byId("cohort-meta").textContent =
-      patients.length +
-      " simulated patients · " +
-      count +
-      (count === 1 ? " week" : " weeks") +
-      " in view";
-    byId("clear-group").hidden = !state.group;
+      members.length === patients.length
+        ? patients.length + " simulated patients"
+        : members.length + " of " + patients.length + " patients";
+    byId("clear-group").hidden = !state.selection.length;
     for (const btn of byId("groups").children)
       btn.setAttribute(
         "aria-pressed",
-        String(btn.dataset.group === state.group),
+        String(state.selection.includes(btn.dataset.group)),
       );
+  }
+  function renderDiary(p, week) {
+    byId("diary-title").textContent = "Week " + (week + 1) + " · Morning diary";
+    byId("previous-week").disabled = week === state.first;
+    byId("next-week").disabled = week === state.last;
+    const entries = p.days.slice(7 * week, 7 * week + 7).map((day, i) => {
+      const row = document.createElement("tr");
+      const index = 7 * week + i;
+      row.dataset.day = index;
+      const first = document.createElement("th");
+      first.scope = "row";
+      const date = document.createElement("button");
+      date.textContent = formatDay(day);
+      date.setAttribute("aria-pressed", String(index === state.day));
+      first.append(date);
+      row.append(first);
+      row.insertCell().textContent = day.night
+        ? day.night.bouts
+        : "No recording";
+      const labels = {
+        independent: "Independent",
+        prompting: "Prompting",
+        hands_on: "Hands-on help",
+      };
+      row.insertCell().textContent = labels[day.help] || "No report";
+      return row;
+    });
+    byId("mornings").replaceChildren(...entries);
   }
   function renderPatient(p, weeks, week) {
     const values = weekly.get(p.id),
@@ -264,46 +344,35 @@
     charts.trends(byId("cohort-plot"), {
       weeks,
       selectedWeek: week,
-      focusGroup: state.group,
+      focusGroup: state.selection.length === 1 ? state.selection[0] : null,
+      onSeries: selectGroups,
       series,
       onWeek: chooseWeek,
       label:
         "Group mean of weekly percentages of reported mornings dressed without help, by week of follow-up. " +
         label,
     });
-    const active = groups.find((g) => g.id === state.group);
-    let message;
-    if (active) {
-      const summary = active.weeks[week];
-      message =
-        active.name +
-        " · " +
-        (summary.n
-          ? percent(summary.rate) +
-            " of mornings without help, averaged across " +
-            summary.n +
-            " reporting patients."
-          : "No morning reports for this group.");
-    } else {
-      const few = groups.find((g) => g.id === "fewer").weeks[week],
-        frequent = groups.find((g) => g.id === "frequent").weeks[week];
-      message =
-        few.n && frequent.n
-          ? "Dressed without help on " +
-            percent(few.rate) +
-            " of mornings in the few-awakenings group and " +
-            percent(frequent.rate) +
-            " in the frequent-awakenings group."
-          : groups
-              .map((g) => g.name + ": " + percent(g.weeks[week].rate))
-              .join(" · ") + ".";
-    }
+    const selected = groups.filter(
+      (g) => !state.selection.length || state.selection.includes(g.id),
+    );
+    const message = selected
+      .map((g) => g.name + " " + percent(g.weeks[week].rate))
+      .join(" · ");
     byId("cohort-readout").textContent = "Week " + (week + 1) + " · " + message;
   }
   function renderNight(p) {
     const day = p.days[state.day],
       n = day.night;
     byId("raw-file").href = "data/apple_health/" + p.id + ".zip";
+    byId("night-title").textContent =
+      "Night ending " + formatDay(day) + " · " + p.id;
+    byId("recording-time").textContent = n
+      ? "Recording " +
+        charts.formatTime(n.start) +
+        "–" +
+        charts.formatTime(n.start + 60 * (n.sleep + n.awake)) +
+        " CET"
+      : "";
     charts.night(byId("night-plot"), n);
     byId("night-number").textContent = n
       ? Math.floor(n.sleep / 60) +
@@ -323,25 +392,72 @@
       ? "That morning: " + helpLabels[day.help] + "."
       : "Morning dressing report missing.";
   }
-  function render() {
-    const p = patients.find((p) => p.id === state.person),
-      weeks = model.weekIndices(state.first, state.last),
-      week = Math.floor(state.day / 7);
-    renderControls(p);
-    renderPatient(p, weeks, week);
-    renderGroups(weeks, week);
-    renderNight(p);
+  function draw() {
+    const week = Math.floor(state.day / 7);
+    const weeks = model.weekIndices(state.first, state.last);
+    if (patientView()) {
+      const person = patients.find((p) => p.id === state.person);
+      renderPatient(person, weeks, week);
+      renderNight(person);
+    } else renderGroups(weeks, week);
+  }
+  function render(reveal = false) {
+    const detail = patientView();
+    byId("compare-view").hidden = detail;
+    byId("patients-view").hidden = !detail;
+    byId("picker").hidden = !detail;
+    document.querySelectorAll(".views a").forEach((link) => {
+      if (link.hash === (detail ? "#patients" : "#compare"))
+        link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
+    });
+    const slot = byId(detail ? "patient-window" : "cohort-window");
+    if (byId("period").parentElement !== slot) slot.append(byId("period"));
+    renderControls();
+    const week = Math.floor(state.day / 7);
+    if (detail)
+      renderDiary(
+        patients.find((p) => p.id === state.person),
+        week,
+      );
+    else {
+      const mode = byId("matrix-order").value,
+        members = eligible();
+      const key = [state.first, state.last, ...state.selection, mode].join("/");
+      if (key !== matrixKey) {
+        const label = groups
+          .filter((g) => state.selection.includes(g.id))
+          .map((g) => g.name)
+          .join(" / ");
+        byId("matrix-title").textContent =
+          "Patient heatmap · " +
+          (label && label !== "All patients"
+            ? label + " · " + members.length + " patients"
+            : "All " + members.length + " patients");
+        matrix.render({
+          patients: members,
+          weeks: model.weekIndices(state.first, state.last),
+          weekly,
+          paired,
+          scale,
+          mode,
+        });
+        matrixKey = key;
+      }
+      matrix.highlight(week, reveal);
+    }
+    draw();
   }
   setupControls();
   updatePatients();
   byId("explorer").hidden = false;
   render();
-  // Chart dimensions can change independently of the viewport, including on zoom.
-  let frame = 0;
+  let frame;
   const observer = new ResizeObserver(() => {
     cancelAnimationFrame(frame);
-    frame = requestAnimationFrame(render);
+    frame = requestAnimationFrame(draw);
   });
-  for (const id of ["patient-plot", "sleep-plot", "cohort-plot", "night-plot"])
-    observer.observe(byId(id));
+  ["patient-plot", "sleep-plot", "cohort-plot", "night-plot"].forEach((id) =>
+    observer.observe(byId(id)),
+  );
 })();

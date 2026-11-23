@@ -85,6 +85,7 @@
     return data.patients.every((p) => {
       if (
         !p ||
+        typeof p.id !== "string" ||
         !/^P[0-9]+$/.test(p.id) ||
         ids.has(p.id) ||
         !groupIds.has(p.group) ||
@@ -123,8 +124,18 @@
     return result;
   }
   function cohortWeeks(patients, weekly) {
-    return groups.map((group) => {
-      const members = patients.filter((p) => p.group === group.id);
+    const wholeCohort = {
+      id: "all",
+      name: "All patients",
+      range: "Entire simulated cohort",
+      color: "#e3edf7",
+      dash: "8 3 2 3",
+    };
+    return [...groups, wholeCohort].map((group) => {
+      const members =
+        group.id === "all"
+          ? patients
+          : patients.filter((p) => p.group === group.id);
       const weeks = patients.length
         ? weekly.get(patients[0].id).map((_, i) => {
             const rates = members

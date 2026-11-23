@@ -540,3 +540,370 @@ h2 {
 .night-notes a {
   font-size: 13px;
 }
+
+.views {
+  display: flex;
+  gap: 26px;
+  border-bottom: 1px solid var(--line);
+  margin-top: 18px;
+}
+.views a {
+  padding: 8px 0;
+  color: var(--sub);
+  text-decoration: none;
+  font-weight: 600;
+  border-bottom: 3px solid transparent;
+}
+.views a[aria-current] {
+  color: var(--text);
+  border-color: var(--aqua);
+}
+.views + .toolbar {
+  margin: 0 0 12px;
+  border-top: 0;
+  min-height: 36px;
+}
+.toolbar .clear-filter {
+  margin: 0;
+}
+.figure-heading,
+.patient-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+.patient-head {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+#period {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--sub);
+  font-size: 14px;
+  min-inline-size: 0;
+}
+#period legend {
+  margin-bottom: 3px;
+  padding: 0;
+}
+#period select {
+  margin-right: 3px;
+}
+#cohort-window {
+  margin: 6px 0 12px;
+}
+#patient-window legend {
+  text-align: right;
+  width: 100%;
+}
+#patient-group {
+  margin: 4px 0;
+  text-align: right;
+}
+.comparison {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(215px, 24%);
+  gap: clamp(14px, 3vw, 42px);
+  align-items: center;
+  margin-bottom: 13px;
+}
+.comparison h3 {
+  font-size: 16px;
+}
+.comparison .group-legend {
+  grid-template-columns: 1fr;
+}
+.comparison .group-legend button {
+  padding: 7px 10px;
+  grid-template-columns: 14px 1fr;
+  gap: 2px 8px;
+}
+.comparison .group-range {
+  grid-column: 2;
+  color: var(--sub);
+}
+.legend-line.all {
+  border-top-style: dashed;
+}
+.axis-frame {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 2px;
+}
+.axis-frame .axis-title {
+  grid-column: 2;
+}
+.y-axis {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  text-align: center;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.25;
+}
+.y-axis span {
+  display: block;
+  color: var(--sub);
+}
+#cohort-plot {
+  height: clamp(186px, 26vh, 280px);
+}
+.hint {
+  color: var(--sub);
+  font-size: 14px;
+  margin: 2px 0;
+}
+.matrix-panel {
+  margin-top: 14px;
+}
+.order {
+  margin-inline-start: auto;
+  color: var(--sub);
+  font-size: 14px;
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.matrix-key {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 5px 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  padding: 10px 13px;
+  margin: 11px 0;
+  border: 1px solid var(--line);
+  background: #10212f;
+  border-radius: 8px;
+}
+.matrix-key dt {
+  font-weight: 600;
+}
+.matrix-key dd {
+  margin: 0;
+  color: #ccdae6;
+}
+.ramp {
+  display: inline-flex;
+  border: 1px solid #52697a;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-right: 5px;
+}
+.ramp i {
+  width: 10px;
+  height: 8px;
+}
+.matrix-scroll {
+  overflow: auto;
+  scrollbar-color: #587281 var(--panel);
+}
+#patient-matrix,
+.diary {
+  width: 100%;
+  border-spacing: 0;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+#patient-matrix {
+  table-layout: fixed;
+}
+#patient-matrix th,
+.diary th {
+  font-weight: 600;
+}
+#patient-matrix thead th,
+.diary thead th {
+  border-bottom: 1px solid var(--line);
+  padding: 7px 3px;
+  color: var(--sub);
+  font-size: 13px;
+}
+#patient-matrix .current {
+  color: var(--aqua);
+  border-color: var(--aqua);
+}
+#patient-matrix tbody th {
+  position: sticky;
+  left: 0;
+  background: var(--panel);
+  z-index: 1;
+}
+#patient-matrix td {
+  padding: 2px;
+  cursor: pointer;
+}
+#patient-matrix button,
+.diary button {
+  font: inherit;
+  border: 0;
+  cursor: pointer;
+}
+#patient-matrix button {
+  border-radius: 4px;
+  padding: 7px 2px;
+  width: 100%;
+  background: #344350;
+  color: var(--text);
+}
+#patient-matrix th button {
+  background: transparent;
+}
+#patient-matrix button:focus-visible,
+.diary button:focus-visible {
+  outline-offset: -3px;
+}
+#patient-matrix td button:hover {
+  box-shadow: inset 0 0 0 2px currentColor;
+}
+#patient-matrix .row-branches,
+#patient-matrix .col-branches {
+  position: relative;
+  padding: 0;
+  cursor: default;
+}
+.col-branches {
+  height: 34px;
+}
+.row-branches svg,
+.col-branches svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: #8fa7b8;
+  stroke-width: 1;
+}
+.tip {
+  position: relative;
+}
+.mast-actions .tip p {
+  right: 0;
+}
+.tip summary {
+  list-style: none;
+  cursor: pointer;
+  border: 1px solid var(--sub);
+  border-radius: 50%;
+  color: var(--sub);
+  font: 600 12px/17px var(--sans);
+  width: 19px;
+  text-align: center;
+}
+.tip summary::-webkit-details-marker {
+  display: none;
+}
+.tip p {
+  position: absolute;
+  z-index: 5;
+  background: #1b2b3c;
+  color: var(--text);
+  border: 1px solid #51657a;
+  border-radius: 7px;
+  padding: 10px;
+  width: min(270px, 75vw);
+  font-size: 14px;
+  box-shadow: 0 4px 16px #0006;
+}
+.diary-panel {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 14px;
+}
+.diary-nav {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+.diary-nav button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.diary {
+  text-align: left;
+}
+.diary thead {
+  height: 34px;
+}
+.diary tbody :is(td, th) {
+  border-bottom: 1px solid var(--line);
+  padding: 4px 5px;
+}
+.diary tbody tr {
+  cursor: pointer;
+}
+.diary button {
+  padding: 7px;
+  background: transparent;
+  color: var(--aqua);
+  white-space: nowrap;
+}
+.diary tr:has([aria-pressed="true"]) {
+  background: #19333d;
+  box-shadow: inset 3px 0 var(--aqua);
+}
+.patient-panel .plot {
+  height: clamp(145px, 20vh, 210px);
+}
+.patient-panel .readout {
+  margin-top: 10px;
+}
+.night-content {
+  margin-top: 18px;
+}
+#night-plot {
+  height: clamp(142px, 17vh, 175px);
+}
+.axis-frame:has(.no-data) :is(.y-axis, .axis-title) {
+  display: none;
+}
+.axis-frame:has(.no-data) #night-plot {
+  grid-column: 1/-1;
+}
+@media (max-width: 800px) {
+  .comparison {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+  .tip p {
+    position: fixed;
+    inset: auto 12px 14px;
+    width: auto;
+  }
+  .diary-nav {
+    margin-left: 0;
+  }
+  .order {
+    margin: 5px 0 0;
+    flex-basis: 100%;
+  }
+  .order select {
+    max-width: 100%;
+  }
+  #patient-matrix button,
+  .diary button {
+    min-height: 42px;
+  }
+}
+@media (max-width: 390px) {
+  .patient-head {
+    align-items: start;
+    gap: 8px;
+  }
+  #patient-window legend {
+    text-align: left;
+  }
+  #patient-group {
+    text-align: left;
+  }
+  .matrix-key {
+    gap: 5px 8px;
+    padding: 8px;
+  }
+}
