@@ -57,6 +57,14 @@ This illustrates the structure. Unzip any file in `data/apple_health/` to inspec
 | Cohort line in each week | Arithmetic mean of available individual percentages in the fixed baseline group. Each patient has equal weight. It can differ from pooling all diary entries |
 | Night selection | The evening leading into the selected local morning, paired with that morning’s diary entry. Week numbers count from the first day of synthetic observation |
 
+### Reading a heatmap cell
+
+Each patient-week has two summaries. The printed percentage uses every completed dressing report. The blue shade uses only mornings with both a watch recording and a diary entry. For these paired mornings, calculate the mean number of awakenings and the fraction of mornings needing any help. Divide the mean awakenings by the largest nightly awakening count across all paired records in the dataset (at least one for scaling). Average the two quantities with equal weights and map the result to seven blue shades. The same scale applies across patients, filters and weeks. Grey marks a week without a pair, and a dash marks a week without a diary entry. The colour is a visual summary chosen for this simulation.
+
+The default order groups patients with similar profiles and keeps weeks chronological. Distances use the root mean square difference on the two scaled measures across weeks where both patients have paired observations. Average-linkage clustering combines groups using the mean of available pairwise distances. Records with no comparable observations remain separate. The optional clustered-week view applies the same procedure across patients. Sorting by patient ID restores a simple lookup table. These display choices do not alter week 1 sleep group membership.
+
+The night chart and recording times use fixed CET (UTC+1) so the clock advances uniformly even across the autumn clock change. The XML retains the offset used in Oslo at the time of each observation, including summer time (UTC+2). Morning dates follow the original Oslo calendar.
+
 ### Missingness and variation
 
 The generator may omit a whole watch night and may separately omit a morning report. In the delivered data, 103 of 2,688 patient-nights have no recording and 54 morning reports are missing. Missing records lower only the relevant denominator. A week with no diary reports has no independence estimate. A night with zero interruptions has a valid sleep record and differs from a missing night. Percentages in early and late weeks can be noisy because there are at most seven morning reports.

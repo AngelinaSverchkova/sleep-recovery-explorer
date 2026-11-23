@@ -4,20 +4,20 @@
 
 Explore how sleep interruptions and the ability to get dressed without help change over eight weeks after stroke. All 48 patients are fictional. The simulation intentionally gives the groups different average recovery patterns.
 
-To try it, select **Frequent** in **Compare sleep groups**. The patient list narrows to the 16 people in that group. Choose one patient and a morning to compare their overnight sleep stages with the help they needed to get dressed.
+To try it, select **Frequent** in **Compare sleep groups**. The heatmap narrows to the 16 patients whose watch recorded at least five awakenings per night on average in week 1. Open **P012, Week 8**. The cell reads **0%**. The diary shows why: the patient needed help on all six reported mornings and left one morning unanswered.
 
-[![Dashboard preview showing a patient diary, three sleep groups and one night of sleep stages](docs/dashboard-preview.png)](https://angelinasverchkova.github.io/sleep-recovery-explorer/)
+[![Dashboard preview showing sleep group trends above a blue heatmap with one row per patient](docs/dashboard-preview.png)](https://angelinasverchkova.github.io/sleep-recovery-explorer/)
 
 ## Explore the dashboard
 
 The live dashboard opens in a browser on desktop or mobile. For an offline copy, choose **Code → Download ZIP** on GitHub, unzip the whole project and open **index.html**.
 
-1. Choose a patient and a first and last week. The left figure shows how often that patient dressed without help. The bars beneath it show how interrupted their sleep was over the same weeks.
-2. Compare three lines in the right figure. Each represents patients grouped by average sleep interruptions during week 1. Select a group to highlight its line and browse its patients. Select it again to restore everyone.
-3. Choose a week on either chart or a morning in the lower panel. Read the overnight stage trace from left to right and compare it with the person's report the next morning. The weekday selections and patient controls also work with the keyboard.
-4. Open **About the data** for the study context and definitions. **Patient’s sleep XML** downloads the selected patient's generated export archive.
+1. **Compare sleep groups** opens with all 48 patients. Three lines track groups defined by average awakenings in week 1. The fourth line gives the overall average. Select a point or a group to filter the heatmap. Use the time span controls to focus on particular weeks.
+2. **Patient heatmap** shows one patient per row and one week per column. The number is the percentage of reported mornings dressed without help. Darker blues indicate more awakenings, more help needed, or both, on days with both records. Weeks start in calendar order. The axis order menu also lets you group similar weeks or sort patients by ID.
+3. **Patients** shows one person's weekly dressing reports and average awakenings. Opening a heatmap cell takes you to that exact patient and week. In the seven-day morning diary, select a date to see the preceding night’s estimated stages on a clock marked in CET (UTC+1). The link beside the trace downloads that patient's generated sleep XML in a ZIP. [Mobile diary preview](docs/patient-diary-mobile.png)
+4. **About the data** explains the study and the simulation. The full [methods and sources](docs/methods.md) include the calculations and missing-data rules.
 
-To explore a weekly line chart with the keyboard, tab to it and use the arrow keys to move between weeks. Home and End select the first and last weeks in the visible range.
+On a weekly chart, the left and right arrow keys move between weeks. Home and End select the first and last visible weeks. In the heatmap, use the arrow keys to move between cells and Enter to open a diary.
 
 ## Study and demonstration
 
@@ -30,6 +30,8 @@ Yang and colleagues followed 306 stroke survivors and found an association betwe
 | `index.html` | Offline dashboard entry point, controls and study notes |
 | `assets/model.js` | Weekly summaries and group comparison rules |
 | `assets/charts.js` | Responsive SVG figures |
+| `assets/profiles.js` | Paired weekly observations and average-linkage clustering |
+| `assets/matrix.js` | Interactive patient-by-week heatmap, branching diagrams and keyboard navigation |
 | `assets/app.js` | Patient selection, linked time window, group selection and night inspection |
 | `assets/style.css` | Layout, typography and colour system |
 | `pipeline/generate.py` | Seeded simulation, synthetic Apple exports and data build |
@@ -49,7 +51,7 @@ On Windows, if Python cannot find the `Europe/Oslo` time zone, run `py -m pip in
 ```sh
 python3 -m pipeline.generate
 python3 -m unittest discover -s tests -p "test_*.py" -v
-node --test tests/model.test.cjs
+node --test tests/model.test.cjs tests/profiles.test.cjs
 ```
 
 To generate independently in another directory, pass `--output PATH`. The same seed, generator and Python runtime produce the same cohort. Generated files are staged before replacement. The browser reads one bundle, replaced last, so it always sees a complete dataset.
