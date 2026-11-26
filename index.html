@@ -32,6 +32,9 @@
     <script defer src="assets/charts.js"></script>
     <script defer src="assets/profiles.js"></script>
     <script defer src="assets/matrix.js"></script>
+    <script defer src="data/diary-training.js"></script>
+    <script defer src="assets/diary-classifier.js"></script>
+    <script defer src="assets/diary-review.js"></script>
     <script defer src="assets/app.js"></script>
   </head>
   <body>
@@ -229,6 +232,20 @@
                 </thead>
                 <tbody id="mornings"></tbody>
               </table>
+              <div class="diary-review">
+                <button type="button" class="quiet" id="review-open" aria-expanded="false" aria-controls="review-editor">Review diary with AI</button>
+                <form id="review-editor" hidden>
+                  <label for="review-note" id="review-context">Fictional morning note</label>
+                  <p class="review-hint" id="review-hint"></p>
+                  <textarea id="review-note" rows="3" maxlength="1200" aria-describedby="review-hint" placeholder="Describe getting dressed in a sentence or two."></textarea>
+                  <div class="review-actions">
+                    <button type="submit" class="quiet" id="review-analyse">Analyse note</button>
+                    <button type="button" class="quiet" id="review-example">Try an example</button>
+                  </div>
+                  <div id="review-output" role="status" aria-live="polite" aria-atomic="true"></div>
+                  <p class="review-hint">Runs in your browser. Suggestions are for review and do not update the charts.</p>
+                </form>
+              </div>
             </section>
           </div>
           <section class="panel night-panel" aria-labelledby="night-title">

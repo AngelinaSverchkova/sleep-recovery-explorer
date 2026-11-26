@@ -813,9 +813,26 @@ h2 {
 }
 .diary-panel {
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto 1fr auto;
   gap: 14px;
 }
+.diary-review {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+#review-open, #review-analyse { color: var(--aqua); }
+#review-editor { display: grid; gap: 8px; margin-top: 14px; }
+#review-context { font-weight: 600; }
+.review-hint, #review-output p { font-size: 14px; color: var(--sub); }
+.review-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+#review-note {
+  width: 100%; resize: vertical; min-height: 5em; padding: 10px;
+  font: inherit; color: var(--text); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 7px;
+}
+#review-note:focus-visible { outline: 2px solid var(--aqua); }
+#review-output:not(:empty) { border-left: 2px solid var(--aqua); padding: 3px 12px; margin: 5px 0; }
+#review-output blockquote { margin: 5px 0; overflow-wrap: anywhere; }
 .diary-nav {
   margin-left: auto;
   display: flex;

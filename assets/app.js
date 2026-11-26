@@ -250,6 +250,8 @@
       );
   }
   function renderDiary(p, week) {
+    const day = p.days[state.day];
+    window.DiaryReview.setMorning(p.id, day.date, formatDay(day));
     byId("diary-title").textContent = "Week " + (week + 1) + " · Morning diary";
     byId("previous-week").disabled = week === state.first;
     byId("next-week").disabled = week === state.last;

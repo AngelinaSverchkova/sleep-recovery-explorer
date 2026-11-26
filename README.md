@@ -19,6 +19,12 @@ The live dashboard opens in a browser on desktop or mobile. For an offline copy,
 
 On a weekly chart, the left and right arrow keys move between weeks. Home and End select the first and last visible weeks. In the heatmap, use the arrow keys to move between cells and Enter to open a diary.
 
+### Try a fictional diary note
+
+Under **Patients → Morning diary**, select **Review diary with AI**, type a fictional English note or choose **Try an example**, then select **Analyse note**. To start with an existing example, open P012 in week 8 and select 29 November. The text classifier suggests the level of dressing support and quotes the sentence it used. Editing the note clears the suggestion. This practice tool runs entirely in the browser, including from an unzipped copy of the dashboard. Notes stay in memory and suggestions do not change the charts.
+
+The classifier compares word and word-pair patterns with a small labelled collection of fictional examples using TF-IDF and nearest neighbours. It can return **Support unclear** for unfamiliar wording. Word overlap can also give a misleading match, particularly with negation, multiple activities or complex timelines. Review the source sentence before interpreting a suggestion. The examples and regression tests illustrate behaviour on synthetic text; accuracy on patient narratives has not been evaluated.
+
 ## Study and demonstration
 
 Yang and colleagues followed 306 stroke survivors and found an association between longitudinal sleep patterns and disability at 12 months. The authors used ActiGraph accelerometry and the modified Rankin Scale. This project uses Apple Health–style simulated intervals and an eight-week dressing diary. The data illustrate the analytical workflow and cannot estimate an effect in real patients. [Original study](https://pubmed.ncbi.nlm.nih.gov/41652308/) · [Methods and sources](docs/methods.md)
@@ -51,7 +57,7 @@ On Windows, if Python cannot find the `Europe/Oslo` time zone, run `py -m pip in
 ```sh
 python3 -m pipeline.generate
 python3 -m unittest discover -s tests -p "test_*.py" -v
-node --test tests/model.test.cjs tests/profiles.test.cjs
+node --test tests/*.test.cjs
 ```
 
 To generate independently in another directory, pass `--output PATH`. The same seed, generator and Python runtime produce the same cohort. Generated files are staged before replacement. The browser reads one bundle, replaced last, so it always sees a complete dataset.

@@ -89,6 +89,28 @@ async function main() {
         .count(),
       1,
     );
+    // Try the complete AI flow from a heatmap cell, including a truly absent note.
+    const review = page.getByRole("button", { name: "Review diary with AI" });
+    const analyse = page.getByRole("button", { name: "Analyse note" });
+    const note = page.locator("#review-note"), result = page.locator("#review-output");
+    await review.click();
+    assert.equal(await note.inputValue(), "");
+    await analyse.click();
+    assert.match(await result.innerText(), /No diary entry/);
+    await page.locator("#mornings tr").last().getByRole("button").click();
+    assert.match(await note.inputValue(), /sweater/);
+    assert.equal(await result.innerText(), "");
+    await analyse.click();
+    assert.match(await result.innerText(), /Needed physical help/);
+    assert.ok((await note.inputValue()).includes(await result.locator("blockquote").innerText()));
+    await note.fill("My niece reminded me to put on my shirt.");
+    assert.equal(await result.innerText(), "");
+    await analyse.click();
+    assert.match(await result.innerText(), /Needed a reminder/);
+    await page.getByRole("button", { name: "Try an example" }).click();
+    assert.equal(await result.innerText(), "");
+    await review.click();
+    assert.equal(await note.isVisible(), false);
     await page.locator("#previous-week").click();
     assert.match(await page.locator("#diary-title").innerText(), /Week 7/);
     await page.locator("#next-week").click();
