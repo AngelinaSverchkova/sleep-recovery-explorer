@@ -21,7 +21,9 @@ On a weekly chart, the left and right arrow keys move between weeks. Home and En
 
 ### Try a fictional diary note
 
-Under **Patients → Morning diary**, select **Review diary with AI**, type a fictional English note or choose **Try an example**, then select **Analyse note**. To start with an existing example, open P012 in week 8 and select 29 November. The text classifier suggests the level of dressing support and quotes the sentence it used. Editing the note clears the suggestion. This practice tool runs entirely in the browser, including from an unzipped copy of the dashboard. Notes stay in memory and suggestions do not change the charts.
+Under **Patients → Morning diary**, select **Review diary with AI**, type a fictional English note or choose **Try an example**, then select **Analyse note**. To start with an existing example, open P012 in week 8 and select 29 November. The default browser classifier suggests the level of dressing support and quotes the sentence it used. It works offline and keeps notes in memory. Editing the note clears the suggestion. The charts use the original synthetic data.
+
+An optional hosted method sends only the submitted note to a Cloudflare Worker running Llama 3.3. The reviewer explicitly selects this method. The Worker and browser both check that the suggested quote occurs in the input. A matching quote still needs a human interpretation. The hosted choice becomes available when the dashboard owner connects a deployed HTTPS endpoint. [Hosted API setup](docs/diary-api.md)
 
 The classifier compares word and word-pair patterns with a small labelled collection of fictional examples using TF-IDF and nearest neighbours. It can return **Support unclear** for unfamiliar wording. Word overlap can also give a misleading match, particularly with negation, multiple activities or complex timelines. Review the source sentence before interpreting a suggestion. The examples and regression tests illustrate behaviour on synthetic text; accuracy on patient narratives has not been evaluated.
 

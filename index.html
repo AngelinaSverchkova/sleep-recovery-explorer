@@ -34,6 +34,8 @@
     <script defer src="assets/matrix.js"></script>
     <script defer src="data/diary-training.js"></script>
     <script defer src="assets/diary-classifier.js"></script>
+    <meta name="diary-api-url" content="" />
+    <script defer src="assets/diary-api.js"></script>
     <script defer src="assets/diary-review.js"></script>
     <script defer src="assets/app.js"></script>
   </head>
@@ -238,12 +240,18 @@
                   <label for="review-note" id="review-context">Fictional morning note</label>
                   <p class="review-hint" id="review-hint"></p>
                   <textarea id="review-note" rows="3" maxlength="1200" aria-describedby="review-hint" placeholder="Describe getting dressed in a sentence or two."></textarea>
+                  <label for="review-method">Analysis method</label>
+                  <select id="review-method" aria-describedby="review-method-info">
+                    <option value="browser">Browser classifier · offline</option>
+                    <option value="hosted" disabled>Hosted language model · not connected</option>
+                  </select>
+                  <p class="review-hint" id="review-method-info">The note stays in this browser.</p>
                   <div class="review-actions">
                     <button type="submit" class="quiet" id="review-analyse">Analyse note</button>
                     <button type="button" class="quiet" id="review-example">Try an example</button>
                   </div>
                   <div id="review-output" role="status" aria-live="polite" aria-atomic="true"></div>
-                  <p class="review-hint">Runs in your browser. Suggestions are for review and do not update the charts.</p>
+                  <p class="review-hint">Suggestions are for review. The charts use the original simulated diary.</p>
                 </form>
               </div>
             </section>

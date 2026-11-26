@@ -3,6 +3,20 @@
   const byId = id => document.getElementById(id);
   const editor = byId("review-editor"), toggle = byId("review-open");
   const note = byId("review-note"), output = byId("review-output");
+  const method = byId("review-method"), submit = byId("review-analyse");
+  const endpoint = document.querySelector('meta[name="diary-api-url"]').content;
+  const hosted = method.querySelector('[value="hosted"]');
+  if (/^https:\/\//.test(endpoint) && ["https:", "http:"].includes(location.protocol)) {
+    hosted.disabled = false;
+    hosted.textContent = "Hosted language model · Llama 3.3";
+  }
+  let pending;
+  function clearResult() {
+    pending?.abort();
+    pending = undefined;
+    submit.disabled = false;
+    output.replaceChildren();
+  }
   const labels = {
     hands_on: "Needed physical help", prompting: "Needed a reminder",
     independent: "Dressed without help", unclear: "Support unclear", missing: "No diary entry",
@@ -34,26 +48,32 @@
     byId("review-hint").textContent = note.value
       ? "Illustrative note written for this simulated morning. You can edit it."
       : "No narrative was supplied for this morning. Write a fictional note or try an example.";
-    output.replaceChildren();
+    clearResult();
   }
   toggle.addEventListener("click", () => {
     editor.hidden = !editor.hidden;
     toggle.setAttribute("aria-expanded", String(!editor.hidden));
     if (!editor.hidden) note.focus();
+    else clearResult();
   });
   byId("review-example").addEventListener("click", () => {
     note.value = examples[nextExample++ % examples.length];
     byId("review-hint").textContent = "Practice example. You can edit it.";
-    output.replaceChildren();
+    clearResult();
     note.focus();
   });
   note.addEventListener("input", () => {
     byId("review-hint").textContent = "Your fictional practice note.";
-    output.replaceChildren();
+    clearResult();
   });
-  editor.addEventListener("submit", event => {
-    event.preventDefault();
-    const result = window.DiaryClassifier.analyse(note.value);
+  method.addEventListener("change", () => {
+    clearResult();
+    byId("review-method-info").textContent = method.value === "hosted"
+      ? "Analyse note sends the text above to Cloudflare. Use fictional notes only."
+      : "The note stays in this browser.";
+  });
+  window.addEventListener("hashchange", clearResult);
+  function renderResult(result) {
     const title = document.createElement("strong");
     title.textContent = "Suggested label · " + labels[result.label];
     output.replaceChildren(title);
@@ -67,6 +87,31 @@
       hint.textContent = result.label === "missing" ? "There are no words to analyse."
         : "Review the original wording before assigning a level of help.";
       output.append(hint);
+    }
+  }
+  editor.addEventListener("submit", async event => {
+    event.preventDefault();
+    clearResult();
+    if (method.value === "browser") {
+      renderResult(window.DiaryClassifier.analyse(note.value));
+      return;
+    }
+    if (hosted.disabled) return;
+    const controller = new AbortController();
+    pending = controller;
+    submit.disabled = true;
+    output.textContent = "Waiting for the language model…";
+    const timer = setTimeout(() => controller.abort(), 45000);
+    try {
+      const result = await window.DiaryAPI.analyse(endpoint, note.value, controller.signal);
+      if (pending === controller && !controller.signal.aborted) renderResult(result);
+    } catch (error) {
+      if (pending === controller)
+        output.textContent = controller.signal.aborted ? "The request timed out. Please try again."
+          : error instanceof TypeError ? "Could not reach the language-model service." : error.message;
+    } finally {
+      clearTimeout(timer);
+      if (pending === controller) { pending = undefined; submit.disabled = false; }
     }
   });
   window.DiaryReview = { setMorning };

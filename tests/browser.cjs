@@ -5,6 +5,48 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 
+async function checkHostedDiary(browser) {
+  const page = await browser.newPage();
+  const dashboard = "https://preview.example", api = "https://diary.example/api/diary/analyse";
+  const types = { ".js": "text/javascript", ".html": "text/html", ".css": "text/css", ".ttf": "font/ttf" };
+  const requests = [];
+  let reply = { label: "hands_on", quote: "helped with my socks" };
+  await page.route(dashboard + "/**", async route => {
+    const pathname = new URL(route.request().url()).pathname;
+    const file = path.join(__dirname, "..", pathname === "/" ? "index.html" : pathname);
+    if (!fs.existsSync(file)) return route.fulfill({ status: 404, body: "" });
+    let body = fs.readFileSync(file);
+    if (pathname === "/")
+      body = body.toString().replace('name="diary-api-url" content=""', 'name="diary-api-url" content="' + api + '"');
+    await route.fulfill({ body, contentType: types[path.extname(file)] });
+  });
+  await page.route(api, async route => {
+    const headers = { "Access-Control-Allow-Origin": dashboard, "Access-Control-Allow-Methods": "POST",
+      "Access-Control-Allow-Headers": "Content-Type" };
+    if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers });
+    requests.push(route.request().postDataJSON());
+    await route.fulfill({ json: reply, headers });
+  });
+  try {
+    await page.goto(dashboard + "/#patients");
+    await page.locator("#review-open").click();
+    await page.locator("#review-method").selectOption("hosted");
+    const note = "My partner helped with my socks.";
+    await page.locator("#review-note").fill(note);
+    assert.deepEqual(requests, []);
+    await page.locator("#review-analyse").click();
+    await page.getByText("Suggested label · Needed physical help", { exact: true }).waitFor();
+    assert.deepEqual(requests, [{ note }]);
+    assert.equal(await page.locator("#review-output blockquote").innerText(), reply.quote);
+    reply = { label: "hands_on", quote: "invented quote" };
+    await page.locator("#review-analyse").click();
+    await page.getByText(/did not return a valid label/).waitFor();
+    assert.equal(await page.locator("#review-output blockquote").count(), 0);
+  } finally {
+    await page.close();
+  }
+}
+
 async function main() {
   const opts = { headless: true };
   if (process.env.CHROME_BIN) opts.executablePath = process.env.CHROME_BIN;
@@ -360,6 +402,7 @@ async function main() {
       await variant.close();
     }
     assert.deepEqual(issues, []);
+    await checkHostedDiary(browser);
     console.log(
       "Browser checks passed: local file, offline assets, group filtering, week windows, night selection, missing data, dialog, desktop and mobile layouts.",
     );
