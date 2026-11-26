@@ -1,0 +1,14 @@
+{
+  "name": "sleep-diary-api",
+  "main": "index.mjs",
+  "compatibility_date": "2026-01-01",
+  "workers_dev": true,
+  "observability": { "enabled": false },
+  "ai": { "binding": "AI" },
+  "ratelimits": [
+    { "name": "DIARY_LIMIT", "namespace_id": "1729", "simple": { "limit": 8, "period": 60 } }
+  ],
+  "vars": {
+    "ALLOWED_ORIGINS": "https://angelinasverchkova.github.io,http://127.0.0.1:8000,http://localhost:8000"
+  }
+}
