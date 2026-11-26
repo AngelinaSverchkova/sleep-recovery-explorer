@@ -9,6 +9,8 @@
   if (/^https:\/\//.test(endpoint) && ["https:", "http:"].includes(location.protocol)) {
     hosted.disabled = false;
     hosted.textContent = "Hosted language model · Llama 3.3";
+  } else if (endpoint && location.protocol === "file:") {
+    hosted.textContent = "Hosted language model · open the web preview";
   }
   let pending;
   function clearResult() {

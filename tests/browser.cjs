@@ -17,7 +17,7 @@ async function checkHostedDiary(browser) {
     if (!fs.existsSync(file)) return route.fulfill({ status: 404, body: "" });
     let body = fs.readFileSync(file);
     if (pathname === "/")
-      body = body.toString().replace('name="diary-api-url" content=""', 'name="diary-api-url" content="' + api + '"');
+      body = body.toString().replace(/name="diary-api-url" content="[^"]*"/, 'name="diary-api-url" content="' + api + '"');
     await route.fulfill({ body, contentType: types[path.extname(file)] });
   });
   await page.route(api, async route => {
